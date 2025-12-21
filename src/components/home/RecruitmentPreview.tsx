@@ -1,14 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const recruitments = [
   {
     id: 1,
     title: "日照協助志工",
-    location: "堀頭里里民活動中心",
     time: "週一至週五 09:00-16:00",
     deadline: "2025/12/31",
     spots: 5,
@@ -17,7 +16,6 @@ const recruitments = [
   {
     id: 2,
     title: "動態活動協助志工",
-    location: "堀頭里里民活動中心",
     time: "週二、週四 14:00-17:00",
     deadline: "2025/12/31",
     spots: 8,
@@ -26,7 +24,6 @@ const recruitments = [
   {
     id: 3,
     title: "宣傳志工",
-    location: "堀頭里里民活動中心",
     time: "彈性時間",
     deadline: "2025/12/31",
     spots: 3,
@@ -74,10 +71,6 @@ const RecruitmentPreview = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{item.location}</span>
-                  </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4 text-primary" />
                     <span>{item.time}</span>
