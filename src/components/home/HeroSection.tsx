@@ -46,21 +46,6 @@ const HeroSection = () => {
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border/50 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <div className="text-center lg:text-left">
-                <div className="text-3xl font-bold text-primary">50+</div>
-                <div className="text-sm text-muted-foreground">現任志工</div>
-              </div>
-              <div className="text-center lg:text-left">
-                <div className="text-3xl font-bold text-primary">200+</div>
-                <div className="text-sm text-muted-foreground">服務長者</div>
-              </div>
-              <div className="text-center lg:text-left">
-                <div className="text-3xl font-bold text-primary">1000+</div>
-                <div className="text-sm text-muted-foreground">服務時數</div>
-              </div>
-            </div>
           </div>
 
           {/* Illustration */}
