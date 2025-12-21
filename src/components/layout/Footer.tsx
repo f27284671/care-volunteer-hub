@@ -44,15 +44,11 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                <span>堀頭里社區服務中心</span>
+                <span>632雲林縣虎尾鎮堀頭里52號</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                <span>02-XXXX-XXXX</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-                <span>volunteer@kutou.org.tw</span>
+                <span>05-6220077</span>
               </div>
             </div>
           </div>
