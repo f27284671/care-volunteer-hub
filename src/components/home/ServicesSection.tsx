@@ -1,28 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, Clock, Heart, Car, Phone, Users } from "lucide-react";
+import { Clock, Heart, Users } from "lucide-react";
 
 const services = [
-  {
-    icon: Home,
-    title: "居家陪伴",
-    description: "陪伴長者聊天、閱讀、做簡單運動，提供溫暖的社交互動。",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
-  {
-    icon: Car,
-    title: "外出陪同",
-    description: "陪同長者就醫、購物或參加社區活動，確保安全出行。",
-    color: "text-accent",
-    bgColor: "bg-accent/10",
-  },
-  {
-    icon: Phone,
-    title: "電話關懷",
-    description: "定期電話問候獨居長者，關心其身心健康狀況。",
-    color: "text-info",
-    bgColor: "bg-info/10",
-  },
   {
     icon: Heart,
     title: "健康促進",
