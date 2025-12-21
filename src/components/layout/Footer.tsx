@@ -32,9 +32,6 @@ const Footer = () => {
               <Link to="/recruitment" className="text-muted-foreground hover:text-primary transition-colors text-sm">
                 招募資訊
               </Link>
-              <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                關於我們
-              </Link>
               <Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors text-sm">
                 志工登入
               </Link>

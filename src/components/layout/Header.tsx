@@ -10,7 +10,6 @@ const Header = () => {
   const navLinks = [
     { href: "/", label: "首頁" },
     { href: "/recruitment", label: "招募資訊" },
-    { href: "/about", label: "關於我們" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
