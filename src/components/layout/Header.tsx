@@ -1,11 +1,17 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart, User, LogIn } from "lucide-react";
+import { Menu, X, Heart, User, LogIn, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const navLinks = [
     { href: "/", label: "首頁" },
@@ -13,6 +19,38 @@ const Header = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "登出失敗",
+        description: "請稍後再試",
+      });
+      return;
+    }
+    toast({
+      title: "已登出",
+      description: "期待您再次回來！",
+    });
+    navigate("/");
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -48,18 +86,32 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/auth">
-                <LogIn className="h-4 w-4" />
-                登入
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth?mode=register">
-                <User className="h-4 w-4" />
-                成為志工
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {user.user_metadata?.full_name || user.email}
+                </span>
+                <Button variant="ghost" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  登出
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">
+                    <LogIn className="h-4 w-4" />
+                    登入
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/auth?mode=register">
+                    <User className="h-4 w-4" />
+                    成為志工
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -90,18 +142,32 @@ const Header = () => {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
-                <Button variant="outline" asChild className="justify-center">
-                  <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <LogIn className="h-4 w-4" />
-                    登入
-                  </Link>
-                </Button>
-                <Button asChild className="justify-center">
-                  <Link to="/auth?mode=register" onClick={() => setIsMenuOpen(false)}>
-                    <User className="h-4 w-4" />
-                    成為志工
-                  </Link>
-                </Button>
+                {user ? (
+                  <>
+                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                      {user.user_metadata?.full_name || user.email}
+                    </div>
+                    <Button variant="outline" className="justify-center" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4" />
+                      登出
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" asChild className="justify-center">
+                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                        <LogIn className="h-4 w-4" />
+                        登入
+                      </Link>
+                    </Button>
+                    <Button asChild className="justify-center">
+                      <Link to="/auth?mode=register" onClick={() => setIsMenuOpen(false)}>
+                        <User className="h-4 w-4" />
+                        成為志工
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
