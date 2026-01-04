@@ -4,8 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock, Users, Filter } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const allRecruitments = [
   {
@@ -48,12 +58,50 @@ const allRecruitments = [
 
 const categories = ["全部", "照顧服務", "活動服務", "宣傳服務"];
 
+type RecruitmentItem = typeof allRecruitments[0];
+
 const Recruitment = () => {
   const [selectedCategory, setSelectedCategory] = useState("全部");
+  const [selectedItem, setSelectedItem] = useState<RecruitmentItem | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const filteredRecruitments = selectedCategory === "全部"
     ? allRecruitments
     : allRecruitments.filter(item => item.category === selectedCategory);
+
+  const handleApplyClick = async (item: RecruitmentItem) => {
+    // Check if user is logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "請先登入",
+        description: "您需要登入才能報名志工服務",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    setSelectedItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const handleConfirmApply = async () => {
+    if (!selectedItem) return;
+    
+    setIsSubmitting(true);
+    // Simulate API call (in real app, this would save to database)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    setIsDialogOpen(false);
+    
+    toast({
+      title: "報名成功！",
+      description: `您已成功報名「${selectedItem.title}」，我們會盡快與您聯繫。`,
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -115,10 +163,11 @@ const Recruitment = () => {
                           {item.description}
                         </CardDescription>
                       </div>
-                      <Button asChild className="shrink-0">
-                        <Link to="/auth?mode=register">
-                          立即報名
-                        </Link>
+                      <Button 
+                        className="shrink-0"
+                        onClick={() => handleApplyClick(item)}
+                      >
+                        立即報名
                       </Button>
                     </div>
                   </CardHeader>
@@ -160,6 +209,40 @@ const Recruitment = () => {
         </section>
       </main>
       <Footer />
+
+      {/* Confirmation Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>確認報名</DialogTitle>
+            <DialogDescription>
+              您確定要報名「{selectedItem?.title}」嗎？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>{selectedItem?.location}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-primary" />
+              <span>{selectedItem?.time}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>報名截止: {selectedItem?.deadline}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleConfirmApply} disabled={isSubmitting}>
+              {isSubmitting ? "報名中..." : "確認報名"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
