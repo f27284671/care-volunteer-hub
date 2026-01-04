@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,13 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Mail, Lock, User, Phone, ArrowLeft } from "lucide-react";
+import { Heart, Mail, Lock, User, Phone, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+// Validation schemas
+const loginSchema = z.object({
+  email: z.string().trim().email({ message: "請輸入有效的電子郵件" }),
+  password: z.string().min(6, { message: "密碼至少需要 6 個字元" }),
+});
+
+const registerSchema = z.object({
+  fullName: z.string().trim().min(1, { message: "請輸入姓名" }).max(100, { message: "姓名不能超過 100 個字元" }),
+  phone: z.string().trim().min(1, { message: "請輸入手機號碼" }).max(20, { message: "手機號碼格式不正確" }),
+  email: z.string().trim().email({ message: "請輸入有效的電子郵件" }),
+  password: z.string().min(6, { message: "密碼至少需要 6 個字元" }),
+});
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("login");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Form states
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerName, setRegisterName] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -22,20 +47,148 @@ const Auth = () => {
     }
   }, [searchParams]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "登入功能開發中",
-      description: "請連接 Supabase 以啟用完整的登入功能。",
+  // Check if user is already logged in
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          navigate("/");
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate("/");
+      }
     });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate input
+    const validation = loginSchema.safeParse({
+      email: loginEmail,
+      password: loginPassword,
+    });
+
+    if (!validation.success) {
+      toast({
+        variant: "destructive",
+        title: "輸入錯誤",
+        description: validation.error.errors[0].message,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) {
+        let message = "登入失敗，請稍後再試";
+        if (error.message.includes("Invalid login credentials")) {
+          message = "電子郵件或密碼錯誤";
+        } else if (error.message.includes("Email not confirmed")) {
+          message = "請先確認您的電子郵件";
+        }
+        toast({
+          variant: "destructive",
+          title: "登入失敗",
+          description: message,
+        });
+        return;
+      }
+
+      toast({
+        title: "登入成功",
+        description: "歡迎回來！",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "登入失敗",
+        description: "發生未知錯誤，請稍後再試",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "註冊功能開發中",
-      description: "請連接 Supabase 以啟用完整的註冊功能。",
+
+    // Validate input
+    const validation = registerSchema.safeParse({
+      fullName: registerName,
+      phone: registerPhone,
+      email: registerEmail,
+      password: registerPassword,
     });
+
+    if (!validation.success) {
+      toast({
+        variant: "destructive",
+        title: "輸入錯誤",
+        description: validation.error.errors[0].message,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+
+      const { error } = await supabase.auth.signUp({
+        email: registerEmail,
+        password: registerPassword,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: registerName,
+            phone: registerPhone,
+          },
+        },
+      });
+
+      if (error) {
+        let message = "註冊失敗，請稍後再試";
+        if (error.message.includes("User already registered")) {
+          message = "此電子郵件已被註冊，請直接登入";
+        } else if (error.message.includes("Password")) {
+          message = "密碼強度不足，請使用更複雜的密碼";
+        }
+        toast({
+          variant: "destructive",
+          title: "註冊失敗",
+          description: message,
+        });
+        return;
+      }
+
+      toast({
+        title: "註冊成功！",
+        description: "歡迎加入志工團隊！",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "註冊失敗",
+        description: "發生未知錯誤，請稍後再試",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,7 +234,10 @@ const Auth = () => {
                           type="email"
                           placeholder="your@email.com"
                           className="pl-10"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -94,12 +250,22 @@ const Auth = () => {
                           type="password"
                           placeholder="••••••••"
                           className="pl-10"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" size="lg">
-                      登入
+                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          登入中...
+                        </>
+                      ) : (
+                        "登入"
+                      )}
                     </Button>
                   </form>
                 </TabsContent>
@@ -115,7 +281,10 @@ const Auth = () => {
                           type="text"
                           placeholder="您的姓名"
                           className="pl-10"
+                          value={registerName}
+                          onChange={(e) => setRegisterName(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -128,7 +297,10 @@ const Auth = () => {
                           type="tel"
                           placeholder="0912-345-678"
                           className="pl-10"
+                          value={registerPhone}
+                          onChange={(e) => setRegisterPhone(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -141,7 +313,10 @@ const Auth = () => {
                           type="email"
                           placeholder="your@email.com"
                           className="pl-10"
+                          value={registerEmail}
+                          onChange={(e) => setRegisterEmail(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
@@ -152,14 +327,24 @@ const Auth = () => {
                         <Input
                           id="register-password"
                           type="password"
-                          placeholder="至少8個字元"
+                          placeholder="至少6個字元"
                           className="pl-10"
+                          value={registerPassword}
+                          onChange={(e) => setRegisterPassword(e.target.value)}
                           required
+                          disabled={isLoading}
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" size="lg">
-                      註冊成為志工
+                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          註冊中...
+                        </>
+                      ) : (
+                        "註冊成為志工"
+                      )}
                     </Button>
                   </form>
                 </TabsContent>
