@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_registrations: {
+        Row: {
+          created_at: string
+          id: string
+          recruitment_deadline: string
+          recruitment_id: number
+          recruitment_time: string
+          recruitment_title: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recruitment_deadline: string
+          recruitment_id: number
+          recruitment_time: string
+          recruitment_title: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recruitment_deadline?: string
+          recruitment_id?: number
+          recruitment_time?: string
+          recruitment_title?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

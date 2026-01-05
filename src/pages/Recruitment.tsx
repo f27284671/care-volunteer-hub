@@ -64,6 +64,7 @@ const Recruitment = () => {
   const [selectedCategory, setSelectedCategory] = useState("全部");
   const [selectedItem, setSelectedItem] = useState<RecruitmentItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -91,16 +92,33 @@ const Recruitment = () => {
   const handleConfirmApply = async () => {
     if (!selectedItem) return;
     
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
     setIsSubmitting(true);
-    // Simulate API call (in real app, this would save to database)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    setIsDialogOpen(false);
     
-    toast({
-      title: "報名成功！",
-      description: `您已成功報名「${selectedItem.title}」，我們會盡快與您聯繫。`,
+    const { error } = await supabase.from("volunteer_registrations").insert({
+      user_id: session.user.id,
+      recruitment_id: selectedItem.id,
+      recruitment_title: selectedItem.title,
+      recruitment_time: selectedItem.time,
+      recruitment_deadline: selectedItem.deadline,
     });
+
+    setIsSubmitting(false);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "報名失敗",
+        description: "請稍後再試",
+      });
+      setIsDialogOpen(false);
+      return;
+    }
+
+    setIsDialogOpen(false);
+    setIsSuccessOpen(true);
   };
 
   return (
@@ -239,6 +257,23 @@ const Recruitment = () => {
             </Button>
             <Button onClick={handleConfirmApply} disabled={isSubmitting}>
               {isSubmitting ? "報名中..." : "確認報名"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>🎉 報名成功！</DialogTitle>
+            <DialogDescription>
+              您已成功報名「{selectedItem?.title}」，我們會盡快與您聯繫。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsSuccessOpen(false)}>
+              確定
             </Button>
           </DialogFooter>
         </DialogContent>
