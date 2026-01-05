@@ -3,6 +3,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const recruitments = [
   {
@@ -31,7 +43,40 @@ const recruitments = [
   },
 ];
 
+type RecruitmentItem = typeof recruitments[0];
+
 const RecruitmentPreview = () => {
+  const [selectedItem, setSelectedItem] = useState<RecruitmentItem | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleApplyClick = async (item: RecruitmentItem) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "請先登入",
+        description: "您需要登入才能報名志工服務",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    setSelectedItem(item);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmApply = async () => {
+    if (!selectedItem) return;
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    setIsConfirmOpen(false);
+    setIsSuccessOpen(true);
+  };
+
   return (
     <section className="py-20">
       <div className="container-custom">
@@ -85,10 +130,8 @@ const RecruitmentPreview = () => {
                   <span className="text-sm text-muted-foreground">
                     剩餘名額: <span className="font-semibold text-foreground">{item.spots} 名</span>
                   </span>
-                  <Button size="sm" asChild>
-                    <Link to={`/auth?mode=register`}>
-                      立即報名
-                    </Link>
+                  <Button size="sm" onClick={() => handleApplyClick(item)}>
+                    立即報名
                   </Button>
                 </div>
               </CardContent>
@@ -96,6 +139,53 @@ const RecruitmentPreview = () => {
           ))}
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>確認報名</DialogTitle>
+            <DialogDescription>
+              您確定要報名「{selectedItem?.title}」嗎？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span>{selectedItem?.time}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>報名截止: {selectedItem?.deadline}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleConfirmApply} disabled={isSubmitting}>
+              {isSubmitting ? "報名中..." : "確認報名"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>🎉 報名成功！</DialogTitle>
+            <DialogDescription>
+              您已成功報名「{selectedItem?.title}」，我們會盡快與您聯繫。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsSuccessOpen(false)}>
+              確定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
