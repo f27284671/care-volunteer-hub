@@ -88,9 +88,13 @@ const Header = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground">
+                <Link 
+                  to="/profile" 
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <User className="h-4 w-4" />
                   {user.user_metadata?.full_name || user.email}
-                </span>
+                </Link>
                 <Button variant="ghost" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   登出
@@ -144,9 +148,14 @@ const Header = () => {
               <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
                 {user ? (
                   <>
-                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                    <Link 
+                      to="/profile" 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                      <User className="h-4 w-4" />
                       {user.user_metadata?.full_name || user.email}
-                    </div>
+                    </Link>
                     <Button variant="outline" className="justify-center" onClick={handleLogout}>
                       <LogOut className="h-4 w-4" />
                       登出

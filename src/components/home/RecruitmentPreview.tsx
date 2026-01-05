@@ -70,9 +70,32 @@ const RecruitmentPreview = () => {
 
   const handleConfirmApply = async () => {
     if (!selectedItem) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const { error } = await supabase.from("volunteer_registrations").insert({
+      user_id: session.user.id,
+      recruitment_id: selectedItem.id,
+      recruitment_title: selectedItem.title,
+      recruitment_time: selectedItem.time,
+      recruitment_deadline: selectedItem.deadline,
+    });
+
     setIsSubmitting(false);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "報名失敗",
+        description: "請稍後再試",
+      });
+      setIsConfirmOpen(false);
+      return;
+    }
+
     setIsConfirmOpen(false);
     setIsSuccessOpen(true);
   };
